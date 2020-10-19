@@ -43,19 +43,10 @@ inline coord toScreenSpace(const Vector4 &v) {
 
 template <typename FragShader, unsigned long width, unsigned long height>
 void drawTriangle(BufferWindow<width, height> &wnd,
-                  const TexCoordNormalVertex &a, const TexCoordNormalVertex &b,
-                  const TexCoordNormalVertex &c,
                   const std::array<Vector4, 3> &positions,
+                  const std::array<Vector4, 3> &normals,
                   std::array<double, width * height> &zBuffer,
                   FragShader &fragmentShader) {
-  // for (auto &&i : screenPositions) {
-  //   auto [px, py] = i;
-
-  //   if (px > 0 && py > 0 && px < width && py < height) {
-  //     wnd.setPixel(px, py, 0xff0000);
-  //   }
-  // }
-
   auto pa = toScreenSpace<width, height>(positions[0]);
   auto pb = toScreenSpace<width, height>(positions[1]);
   auto pc = toScreenSpace<width, height>(positions[2]);
@@ -78,16 +69,16 @@ void drawTriangle(BufferWindow<width, height> &wnd,
 
       if (!(bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0)) {
         P.z = 0;
-        P.z += a.position.z * bc_screen.x;
-        P.z += b.position.z * bc_screen.y;
-        P.z += c.position.z * bc_screen.z;
+        P.z += positions[0].z * bc_screen.x;
+        P.z += positions[1].z * bc_screen.y;
+        P.z += positions[2].z * bc_screen.z;
         Vector3 normal;
-        normal.x = a.normal.x * bc_screen.x + b.normal.x * bc_screen.y +
-                   c.normal.x * bc_screen.z;
-        normal.y = a.normal.y * bc_screen.x + b.normal.y * bc_screen.y +
-                   c.normal.y * bc_screen.z;
-        normal.z = a.normal.z * bc_screen.x + b.normal.z * bc_screen.y +
-                   c.normal.z * bc_screen.z;
+        normal.x = normals[0].x * bc_screen.x + normals[1].x * bc_screen.y +
+                   normals[2].x * bc_screen.z;
+        normal.y = normals[0].y * bc_screen.x + normals[1].y * bc_screen.y +
+                   normals[2].y * bc_screen.z;
+        normal.z = normals[0].z * bc_screen.x + normals[1].z * bc_screen.y +
+                   normals[2].z * bc_screen.z;
         if (zBuffer[(int)(P.x + P.y * width)] < P.z) {
           zBuffer[(int)(P.x + P.y * width)] = P.z;
           uint32_t col;

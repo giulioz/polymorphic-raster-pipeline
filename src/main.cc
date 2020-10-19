@@ -16,14 +16,13 @@ int main(int argc, char *argv[]) {
 
   auto mesh = readObjFile("../dataset/teapot.obj");
 
-  Matrix4 viewMatrix = Matrix4::identity();
+  std::array<double, WIDTH *HEIGHT> zBuffer = {0};
 
   auto time = 0.0;
   while (!wnd.checkExit()) {
     wnd.startDraw();
     wnd.clear();
-
-    std::array<double, WIDTH *HEIGHT> zBuffer = {0};
+    std::fill(zBuffer.begin(), zBuffer.end(), 0);
 
     auto fragmentShader = [](uint32_t *col, Vector3 normal, Vector3 bary) {
       Vector3 light(0, 0, 1);
@@ -36,19 +35,23 @@ int main(int argc, char *argv[]) {
       return intensity > 0;
     };
 
+    Matrix4 transform =
+        Matrix4::rotationY(time / 1000.0) *
+        Matrix4::scale(Vector3(1.0 / 100, 1.0 / 100, 1.0 / 100));
+
+    Matrix4 transformInverse = Matrix4::transpose(Matrix4::invert(transform));
+
     for (auto &&face : mesh.faces) {
       std::array<Vector4, 3> positions;
+      std::array<Vector4, 3> normals;
       for (size_t i = 0; i < 3; i++) {
-        positions[i] =
-            Vector4(mesh.vertexAttributes[face.indices[i]].position.x / 100,
-                    mesh.vertexAttributes[face.indices[i]].position.y / 100,
-                    mesh.vertexAttributes[face.indices[i]].position.z / 100, 1);
+        positions[i] = Matrix4::transformVector4(
+            mesh.vertexAttributes[face.indices[i]].position, transform);
+        normals[i] = Vector4::normalize(Matrix4::transformVector4(
+            mesh.vertexAttributes[face.indices[i]].normal, transformInverse));
       }
 
-      drawTriangle(wnd, mesh.vertexAttributes[face.indices[0]],
-                   mesh.vertexAttributes[face.indices[1]],
-                   mesh.vertexAttributes[face.indices[2]], positions, zBuffer,
-                   fragmentShader);
+      drawTriangle(wnd, positions, normals, zBuffer, fragmentShader);
     }
 
     wnd.endDraw();

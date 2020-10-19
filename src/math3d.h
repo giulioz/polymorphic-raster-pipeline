@@ -120,6 +120,13 @@ struct Vector4 {
     z = v3.z;
     w = _w;
   }
+
+  static inline Vector4 normalize(const Vector4 &v) {
+    const num factor = sqrt(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
+    return Vector4{v.x / factor, v.y / factor, v.z / factor, v.w / factor};
+  }
+
+  const num length() const { return sqrt(x * x + y * y + z * z + w * w); }
 };
 
 struct Matrix4 {
@@ -236,7 +243,7 @@ struct Matrix4 {
                    v.x * m.m14 + v.y * m.m24 + v.z * m.m34 + m.m44 * w};
   }
 
-  Matrix4 operator*(Matrix4 value2) {
+  Matrix4 operator*(const Matrix4 &value2) const {
     Matrix4 m;
 
     m.m11 = m11 * value2.m11 + m12 * value2.m21 + m13 * value2.m31 +
@@ -276,5 +283,94 @@ struct Matrix4 {
             m44 * value2.m44;
 
     return m;
+  }
+
+  static Matrix4 invert(const Matrix4 &matrix) {
+    Matrix4 result;
+
+    float a = matrix.m11, b = matrix.m12, c = matrix.m13, d = matrix.m14;
+    float e = matrix.m21, f = matrix.m22, g = matrix.m23, h = matrix.m24;
+    float i = matrix.m31, j = matrix.m32, k = matrix.m33, l = matrix.m34;
+    float m = matrix.m41, n = matrix.m42, o = matrix.m43, p = matrix.m44;
+
+    float kp_lo = k * p - l * o;
+    float jp_ln = j * p - l * n;
+    float jo_kn = j * o - k * n;
+    float ip_lm = i * p - l * m;
+    float io_km = i * o - k * m;
+    float in_jm = i * n - j * m;
+
+    float a11 = +(f * kp_lo - g * jp_ln + h * jo_kn);
+    float a12 = -(e * kp_lo - g * ip_lm + h * io_km);
+    float a13 = +(e * jp_ln - f * ip_lm + h * in_jm);
+    float a14 = -(e * jo_kn - f * io_km + g * in_jm);
+
+    float det = a * a11 + b * a12 + c * a13 + d * a14;
+
+    if (fabs(det) < FLT_EPSILON) {
+      return Matrix4(NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN,
+                     NAN, NAN, NAN, NAN);
+    }
+
+    float invDet = 1.0f / det;
+
+    result.m11 = a11 * invDet;
+    result.m21 = a12 * invDet;
+    result.m31 = a13 * invDet;
+    result.m41 = a14 * invDet;
+
+    result.m12 = -(b * kp_lo - c * jp_ln + d * jo_kn) * invDet;
+    result.m22 = +(a * kp_lo - c * ip_lm + d * io_km) * invDet;
+    result.m32 = -(a * jp_ln - b * ip_lm + d * in_jm) * invDet;
+    result.m42 = +(a * jo_kn - b * io_km + c * in_jm) * invDet;
+
+    float gp_ho = g * p - h * o;
+    float fp_hn = f * p - h * n;
+    float fo_gn = f * o - g * n;
+    float ep_hm = e * p - h * m;
+    float eo_gm = e * o - g * m;
+    float en_fm = e * n - f * m;
+
+    result.m13 = +(b * gp_ho - c * fp_hn + d * fo_gn) * invDet;
+    result.m23 = -(a * gp_ho - c * ep_hm + d * eo_gm) * invDet;
+    result.m33 = +(a * fp_hn - b * ep_hm + d * en_fm) * invDet;
+    result.m43 = -(a * fo_gn - b * eo_gm + c * en_fm) * invDet;
+
+    float gl_hk = g * l - h * k;
+    float fl_hj = f * l - h * j;
+    float fk_gj = f * k - g * j;
+    float el_hi = e * l - h * i;
+    float ek_gi = e * k - g * i;
+    float ej_fi = e * j - f * i;
+
+    result.m14 = -(b * gl_hk - c * fl_hj + d * fk_gj) * invDet;
+    result.m24 = +(a * gl_hk - c * el_hi + d * ek_gi) * invDet;
+    result.m34 = -(a * fl_hj - b * el_hi + d * ej_fi) * invDet;
+    result.m44 = +(a * fk_gj - b * ek_gi + c * ej_fi) * invDet;
+
+    return result;
+  }
+
+  static Matrix4 transpose(const Matrix4 &matrix) {
+    Matrix4 result;
+
+    result.m11 = matrix.m11;
+    result.m12 = matrix.m21;
+    result.m13 = matrix.m31;
+    result.m14 = matrix.m41;
+    result.m21 = matrix.m12;
+    result.m22 = matrix.m22;
+    result.m23 = matrix.m32;
+    result.m24 = matrix.m42;
+    result.m31 = matrix.m13;
+    result.m32 = matrix.m23;
+    result.m33 = matrix.m33;
+    result.m34 = matrix.m43;
+    result.m41 = matrix.m14;
+    result.m42 = matrix.m24;
+    result.m43 = matrix.m34;
+    result.m44 = matrix.m44;
+
+    return result;
   }
 };
