@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstring>
 #include <vector>
 
@@ -8,11 +9,10 @@
 using index_type = unsigned long;
 
 struct Face {
-  index_type indices[3];
+  std::array<index_type, 3> indices;
 
-  Face(index_type indices[3]) {
-    std::memcpy(this->indices, indices, sizeof(index_type) * 3);
-  }
+  template <typename T>
+  Face(const T &indices) : indices(indices) {}
 };
 
 struct TexCoordNormalVertex {

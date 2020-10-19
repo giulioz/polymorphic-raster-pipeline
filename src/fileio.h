@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -43,12 +44,13 @@ Mesh<TexCoordNormalVertex> readObjFile(const std::string& filename) {
       ss >> vals[2];
       tcoord.push_back(Vector3(vals[0], vals[1], vals[2]));
     } else if (line.rfind("f ", 0) == 0) {
-      unsigned long vals[3];
+      std::array<unsigned long, 3> vals;
       std::string substr = line.substr(1);
       std::stringstream ss(substr);
       int i = 0;
       while (ss.peek() == ' ' || ss.peek() == '/') ss.ignore();
       while (ss >> vals[i]) {
+        vals[i]--;
         i++;
         while (ss.peek() == ' ' || ss.peek() == '/') ss.ignore();
       }
