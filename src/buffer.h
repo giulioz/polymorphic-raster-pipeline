@@ -2,6 +2,14 @@
 
 #include <SDL.h>
 
+inline uint32_t alphaBlend(uint32_t color1, uint32_t color2, uint8_t alpha) {
+  uint32_t rb = color1 & 0xff00ff;
+  uint32_t g = color1 & 0x00ff00;
+  rb += ((color2 & 0xff00ff) - rb) * alpha >> 8;
+  g += ((color2 & 0x00ff00) - g) * alpha >> 8;
+  return (rb & 0xff00ff) | (g & 0xff00);
+}
+
 template <size_t width, size_t height>
 class BufferWindow {
  private:
@@ -9,7 +17,9 @@ class BufferWindow {
   SDL_Surface *screenSurface;
 
  public:
-  uint32_t *pixels;
+  using color_type = uint32_t;
+
+  color_type *pixels;
   uint64_t last = SDL_GetPerformanceCounter();
 
   BufferWindow() {
@@ -23,7 +33,7 @@ class BufferWindow {
         printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
       } else {
         screenSurface = SDL_GetWindowSurface(window);
-        pixels = (uint32_t *)screenSurface->pixels;
+        pixels = (color_type *)screenSurface->pixels;
       }
     }
   }
@@ -32,6 +42,16 @@ class BufferWindow {
     SDL_DestroyWindow(window);
     SDL_Quit();
   }
+
+  inline size_t convCoord(size_t x, size_t y) { return y * width + x; }
+
+  inline void setPixel(size_t i, color_type color) { pixels[i] = color; }
+
+  inline void setPixel(size_t x, size_t y, color_type color) {
+    pixels[convCoord(x, y)] = color;
+  }
+
+  void clear() { memset(pixels, 0, width * height * sizeof(color_type)); }
 
   auto checkExit() {
     SDL_Event e;
