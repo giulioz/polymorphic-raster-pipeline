@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     std::fill(zBuffer.begin(), zBuffer.end(), 0);
 
     auto fragmentShader = [](uint32_t *col, Vector3 normal, Vector3 bary) {
-      Vector3 light(0, 0, 1);
+      Vector3 light(0, 0, -1);
       float intensity = Vector3::dot(normal, light);
       unsigned char r = intensity * 255.0;
       unsigned char b = intensity * 255.0;
@@ -36,10 +36,13 @@ int main(int argc, char *argv[]) {
     };
 
     Matrix4 transform =
-        Matrix4::rotationY(time / 1000.0) *
-        Matrix4::scale(Vector3(1.0 / 100, 1.0 / 100, 1.0 / 100));
+        Matrix4::rotationY(time / 1000.0) * Matrix4::rotationX(time / 1000.0) *
+        Matrix4::scale(Vector3(1.0 / 100, 1.0 / 100, 1.0 / 100)) *
+        Matrix4::translation(Vector3(0, 0, 1.5));
 
     Matrix4 transformInverse = Matrix4::transpose(Matrix4::invert(transform));
+
+    Matrix4 projection = Matrix4::perspective(1, 5);
 
     for (auto &&face : mesh.faces) {
       std::array<Vector4, 3> positions;
@@ -47,6 +50,11 @@ int main(int argc, char *argv[]) {
       for (size_t i = 0; i < 3; i++) {
         positions[i] = Matrix4::transformVector4(
             mesh.vertexAttributes[face.indices[i]].position, transform);
+        positions[i] = Matrix4::transformVector4(positions[i], projection);
+        positions[i].x /= positions[i].w;
+        positions[i].y /= positions[i].w;
+        positions[i].z /= positions[i].w;
+
         normals[i] = Vector4::normalize(Matrix4::transformVector4(
             mesh.vertexAttributes[face.indices[i]].normal, transformInverse));
       }

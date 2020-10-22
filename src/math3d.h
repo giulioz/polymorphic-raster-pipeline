@@ -221,10 +221,12 @@ struct Matrix4 {
     };
   }
 
-  static auto perspective() {
+  static auto perspective(const num near, const num far) {
     return Matrix4{
-        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+        2 * near, 0.0, 0.0, 0.0,  //
+        0.0, 2 * near, 0.0, 0.0,  //
+        0.0, 0.0, -(far + near) / (far - near), -(2 * far * near) / (far - near),  //
+        0.0, 0.0, -1.0, 0.0,  //
     };
   }
 
@@ -241,6 +243,13 @@ struct Matrix4 {
                    v.x * m.m12 + v.y * m.m22 + v.z * m.m32 + m.m42 * w,
                    v.x * m.m13 + v.y * m.m23 + v.z * m.m33 + m.m43 * w,
                    v.x * m.m14 + v.y * m.m24 + v.z * m.m34 + m.m44 * w};
+  }
+
+  static auto transformVector4(const Vector4 &v, const Matrix4 &m) {
+    return Vector4{v.x * m.m11 + v.y * m.m21 + v.z * m.m31 + m.m41 * v.w,
+                   v.x * m.m12 + v.y * m.m22 + v.z * m.m32 + m.m42 * v.w,
+                   v.x * m.m13 + v.y * m.m23 + v.z * m.m33 + m.m43 * v.w,
+                   v.x * m.m14 + v.y * m.m24 + v.z * m.m34 + m.m44 * v.w};
   }
 
   Matrix4 operator*(const Matrix4 &value2) const {

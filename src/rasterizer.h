@@ -62,16 +62,16 @@ void drawTriangle(BufferWindow<width, height> &wnd,
     bboxmin.y = std::max(0, std::min(bboxmin.y, pts[i].y));
     bboxmax.y = std::min(clamp.y, std::max(bboxmax.y, pts[i].y));
   }
-  Vector3 P;
-  for (P.x = bboxmin.x; P.x <= bboxmax.x; P.x++) {
-    for (P.y = bboxmin.y; P.y <= bboxmax.y; P.y++) {
-      Vector3 bc_screen = barycentric(pts, P.x, P.y);
+
+  for (int px = bboxmin.x; px <= bboxmax.x; px++) {
+    for (int py = bboxmin.y; py <= bboxmax.y; py++) {
+      Vector3 bc_screen = barycentric(pts, px, py);
 
       if (!(bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0)) {
-        P.z = 0;
-        P.z += positions[0].z * bc_screen.x;
-        P.z += positions[1].z * bc_screen.y;
-        P.z += positions[2].z * bc_screen.z;
+        float pz = 0;
+        pz += positions[0].z * bc_screen.x;
+        pz += positions[1].z * bc_screen.y;
+        pz += positions[2].z * bc_screen.z;
         Vector3 normal;
         normal.x = normals[0].x * bc_screen.x + normals[1].x * bc_screen.y +
                    normals[2].x * bc_screen.z;
@@ -79,11 +79,12 @@ void drawTriangle(BufferWindow<width, height> &wnd,
                    normals[2].y * bc_screen.z;
         normal.z = normals[0].z * bc_screen.x + normals[1].z * bc_screen.y +
                    normals[2].z * bc_screen.z;
-        if (zBuffer[(int)(P.x + P.y * width)] < P.z) {
-          zBuffer[(int)(P.x + P.y * width)] = P.z;
+        if (pz > 0 && zBuffer[(int)(px + py * width)] < pz) {
+          zBuffer[(int)(px + py * width)] = pz;
           uint32_t col;
+          Vector3 P(px, py, pz);
           if (fragmentShader(&col, normal, P)) {
-            wnd.setPixel(P.x, P.y, col);
+            wnd.setPixel(px, py, col);
           }
         }
       }
